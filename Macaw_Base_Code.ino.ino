@@ -11,6 +11,8 @@
 //  low pass FILTER to apply jointed compliance.                         //
 //=======================================================================//
 
+// WORK IN PROGRESS (Untested)
+
 //----------------
 // LIBRARY (Include)
 // Metro, by Thomas Ouellet Fredericks,
@@ -19,15 +21,15 @@
 
 //----------------
 // SERVO NAMES (Defined)
-Servo Beak;              // Open close the beak
-Servo Beak_Shift;        // Move beak forward and back
-Servo Head_Turn;         // Turn head left and right
-Servo Head_Rotate;       // Tilt head side to side
-Servo Neck_XShift;       // Lift neck up and down
-Servo Body_ZShift;       // Tilt body side to side
-Servo Body_XShift;       // Lift body up and down
-Servo Step;              // Move legs (Walking)
-Servo Gantry;            // Move body (Walking)
+Servo Beak;              // Open close the beak (Hs65HB Servo)
+Servo Beak_Shift;        // Move beak forward and back (Hs65HB Servo)
+Servo Head_Turn;         // Turn head left and right (Hs65MG Servo)
+Servo Head_Rotate;       // Tilt head side to side (Hs645MG Servo)
+Servo Neck_XShift;       // Lift neck up and down (Hs645MG Servo)
+Servo Body_ZShift;       // Tilt body side to side (Hs645MG Servo)
+Servo Body_XShift;       // Lift body up and down (Hs645MG Servo)
+Servo Step;              // Move legs (SW5513-4MA Sailwinch Servo)
+Servo Gantry;            // Move body (SW5513-4MA Sailwinch Servo)
 
 //----------------
 // INITIAL SERVO POSITION (Center)
@@ -61,7 +63,7 @@ int Servo_Value;                          // Servo_Value
 int Servo_Value_Smooth;                   // Servo_Value to be smoothed
 int FilterVal = random(0.01, 1.0);        // Random Value Range from (0.01 = Full Filter ~ 1.0 = No Filter)
 float Apply_Filter = FilterVal;           // 0.01 ~ 1.0 (Low pass Filter) (1 = no filter)
-int Bezier_curve = 3500;                  // Duration of the interval in miliseconds (can be set to random)
+int Bezier_curve = 3500;                  // Duration of the interval in miliseconds (can be set to random(1000,5000))
 Metro intervaller = Metro (Bezier_curve); // Metro uses the built-in timer (either fixed or tempo-relative)
 
 //==========================================
@@ -99,6 +101,12 @@ void loop() {
   delay(500);               // 0.5 sec delay
   digitalWrite(blink, HIGH); // Open eye
 
+  if (intervaller.check() == 1) {                      // Check built-in timer is returned to start
+     Servo_Value = (Random_value);                     // Calculate a new random position between 1000 and 2000 values
+     intervaller.interval(random(min, max));           // Resets interval with a new random Bézier Curve Trajectory  
+} // Smooth the Trajectory Value              
+     Servo_Value_Smooth = Servo_Value_Smooth * (1.0-Apply_Filter) + Servo_Value * Apply_Filter; 
+
     //Call up loop routines
      Macaw();                // Macaw routine 
      Walking();              // Walking routine
@@ -111,12 +119,7 @@ void loop() {
 // MACAW routine                              
 // Servo movements eased with low pass filter 
 void Macaw() {                                
-  if (intervaller.check() == 1) {                      // Check built-in timer is returned to start
-     Servo_Value = (Random_value);                     // Calculate a new random position between 1000 and 2000 values
-     intervaller.interval(random(min, max));           // Resets interval with a new random Bézier Curve Trajectory  
-} // Smooth the Trajectory Value              
-     Servo_Value_Smooth = Servo_Value_Smooth * (1.0-Apply_Filter) + Servo_Value * Apply_Filter; 
-     
+
      Head_Rotate.write(Servo_Value_Smooth);            // Assign new position to the servo with filter applied
   delay(1000);                                         // Delay to make the servo move
      Neck_XShift.write(Servo_Value_Smooth);
